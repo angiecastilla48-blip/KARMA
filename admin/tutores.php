@@ -1,4 +1,3 @@
-```php
 <?php
 session_start();
 
@@ -9,10 +8,10 @@ requiereAdmin();
 
 $mensaje = "";
 $error = "";
+$tutores = [];
 
-/* Procesar acciones */
+// Procesar acciones
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
-
     $id = filter_input(INPUT_POST, "id", FILTER_VALIDATE_INT);
     $accion = $_POST["accion"] ?? "";
 
@@ -20,59 +19,68 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $error = "El tutor seleccionado no es válido.";
 
     } elseif ($accion === "verificar" || $accion === "quitar") {
-
         $estado = ($accion === "verificar") ? 1 : 0;
 
-        $sql = "UPDATE tutores SET verificado = ? WHERE id = ?";
-        $stmt = $conexion->prepare($sql);
-        $stmt->bind_param("ii", $estado, $id);
+        try {
+            $sql = "UPDATE tutor
+                    SET verificado = ?
+                    WHERE id_tutor = ?";
 
-        if ($stmt->execute()) {
-            $mensaje = "Estado del tutor actualizado correctamente.";
-        } else {
+            $stmt = $mysqli->prepare($sql);
+            $stmt->bind_param("ii", $estado, $id);
+            $stmt->execute();
+
+            $mensaje = $stmt->affected_rows > 0
+                ? "Estado del tutor actualizado correctamente."
+                : "El tutor ya tiene ese estado o no existe.";
+
+            $stmt->close();
+
+        } catch (mysqli_sql_exception $e) {
             $error = "No se pudo actualizar el estado del tutor.";
         }
 
-        $stmt->close();
-
     } elseif ($accion === "eliminar") {
+        try {
+            $sql = "DELETE FROM tutor WHERE id_tutor = ?";
 
-        $sql = "DELETE FROM tutores WHERE id = ?";
-        $stmt = $conexion->prepare($sql);
-        $stmt->bind_param("i", $id);
+            $stmt = $mysqli->prepare($sql);
+            $stmt->bind_param("i", $id);
+            $stmt->execute();
 
-        if ($stmt->execute()) {
             $mensaje = $stmt->affected_rows > 0
                 ? "Tutor eliminado correctamente."
                 : "No se encontró el tutor.";
-        } else {
-            $error = "No se pudo eliminar el tutor. Puede tener registros relacionados.";
-        }
 
-        $stmt->close();
+            $stmt->close();
+
+        } catch (mysqli_sql_exception $e) {
+            $error = "No se pudo eliminar el tutor. Puede tener solicitudes relacionadas.";
+        }
 
     } else {
         $error = "Acción no válida.";
     }
 }
 
-/* Consultar tutores */
-$sql = "SELECT t.id, t.nombre, t.correo, t.telefono,
-               t.verificado, m.nombre AS materia
-        FROM tutores t
-        LEFT JOIN materias m ON t.materia_id = m.id
-        ORDER BY t.nombre ASC";
+// Consultar tutores y sus materias
+try {
+    $sql = "SELECT
+                t.id_tutor,
+                t.nombre,
+                t.telefono,
+                t.verificado,
+                m.nombre AS materia
+            FROM tutor t
+            LEFT JOIN materia m
+                ON t.id_materia = m.id_materia
+            ORDER BY t.nombre ASC";
 
-$resultado = $conexion->query($sql);
+    $resultado = $mysqli->query($sql);
+    $tutores = $resultado->fetch_all(MYSQLI_ASSOC);
 
-$tutores = [];
-
-if ($resultado) {
-    while ($fila = $resultado->fetch_assoc()) {
-        $tutores[] = $fila;
-    }
-} else {
-    $error = "No se pudieron consultar los tutores. Revisa las tablas de la base de datos.";
+} catch (mysqli_sql_exception $e) {
+    $error = "No se pudieron consultar los tutores. Revisa la estructura de la base de datos.";
 }
 
 require __DIR__ . "/../includes/header_admin.php";
@@ -83,6 +91,8 @@ require __DIR__ . "/../includes/header_admin.php";
         max-width: 1150px;
         margin: 30px auto;
         padding: 20px;
+        color: #3d3150;
+        font-family: "Nunito", Arial, sans-serif;
     }
 
     .encabezado-tutores {
@@ -95,7 +105,7 @@ require __DIR__ . "/../includes/header_admin.php";
     }
 
     .encabezado-tutores h2 {
-        color: #a83291;
+        color: #6c4a9e;
         margin-bottom: 8px;
     }
 
@@ -107,27 +117,32 @@ require __DIR__ . "/../includes/header_admin.php";
     .boton-tutor {
         display: inline-block;
         border: none;
-        border-radius: 8px;
+        border-radius: 9px;
         padding: 10px 13px;
         text-decoration: none;
         font-size: 13px;
         cursor: pointer;
         font-weight: bold;
+        font-family: inherit;
     }
 
     .nuevo-tutor {
-        background: #a83291;
+        background: #6c4a9e;
         color: white;
     }
 
+    .nuevo-tutor:hover {
+        background: #56377f;
+    }
+
     .editar-tutor {
-        background: #eee4fa;
-        color: #6837a1;
+        background: #eee5f8;
+        color: #5d3d88;
     }
 
     .verificar-tutor {
-        background: #dcf5e5;
-        color: #216b40;
+        background: #dcf5dd;
+        color: #286b36;
     }
 
     .quitar-tutor {
@@ -136,38 +151,38 @@ require __DIR__ . "/../includes/header_admin.php";
     }
 
     .eliminar-tutor {
-        background: #ffe5e5;
+        background: #fde7e7;
         color: #a52b38;
     }
 
     .tabla-contenedor {
         overflow-x: auto;
         background: white;
-        border-radius: 12px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.07);
+        border-radius: 14px;
+        box-shadow: 0 4px 15px rgba(108, 74, 158, 0.10);
     }
 
     .tabla-tutores {
         width: 100%;
         border-collapse: collapse;
-        min-width: 750px;
+        min-width: 700px;
     }
 
     .tabla-tutores th {
-        background: #f6eafa;
-        color: #64265f;
+        background: #f3eef9;
+        color: #6c4a9e;
         padding: 15px 12px;
         text-align: left;
     }
 
     .tabla-tutores td {
         padding: 13px 12px;
-        border-bottom: 1px solid #eee;
+        border-bottom: 1px solid #eee8f5;
         color: #45364e;
     }
 
-    .tabla-tutores tr:hover td {
-        background: #fdf9ff;
+    .tabla-tutores tbody tr:hover td {
+        background: #faf8fd;
     }
 
     .estado {
@@ -179,8 +194,8 @@ require __DIR__ . "/../includes/header_admin.php";
     }
 
     .estado-si {
-        background: #dcf5e5;
-        color: #216b40;
+        background: #dcf5dd;
+        color: #286b36;
     }
 
     .estado-no {
@@ -192,6 +207,7 @@ require __DIR__ . "/../includes/header_admin.php";
         display: flex;
         flex-wrap: wrap;
         gap: 7px;
+        align-items: center;
     }
 
     .acciones-tutor form {
@@ -199,25 +215,30 @@ require __DIR__ . "/../includes/header_admin.php";
     }
 
     .mensaje-tutor {
-        padding: 12px;
-        border-radius: 8px;
+        padding: 13px;
+        border-radius: 9px;
         margin-bottom: 18px;
     }
 
     .mensaje-ok {
-        background: #dcf5e5;
-        color: #216b40;
+        background: #e0f5df;
+        color: #286b36;
     }
 
     .mensaje-error {
-        background: #ffe5e5;
-        color: #a52b38;
+        background: #fee2e2;
+        color: #991b1b;
     }
 
     .sin-tutores {
         text-align: center;
         padding: 25px !important;
         color: #777 !important;
+    }
+
+    .total-tutores {
+        margin-top: 18px;
+        color: #5d4779;
     }
 
     @media (max-width: 600px) {
@@ -231,7 +252,7 @@ require __DIR__ . "/../includes/header_admin.php";
 
     <div class="encabezado-tutores">
         <div>
-            <h2>Gestión de tutores</h2>
+            <h2>👩‍🏫 Gestión de tutores</h2>
             <p>Administra los tutores registrados en KARMA.</p>
         </div>
 
@@ -253,13 +274,12 @@ require __DIR__ . "/../includes/header_admin.php";
     <?php endif; ?>
 
     <div class="tabla-contenedor">
-        <table class="tabla-tutores">
 
+        <table class="tabla-tutores">
             <thead>
                 <tr>
                     <th>ID</th>
                     <th>Nombre</th>
-                    <th>Correo</th>
                     <th>Teléfono</th>
                     <th>Materia</th>
                     <th>Verificación</th>
@@ -273,23 +293,31 @@ require __DIR__ . "/../includes/header_admin.php";
                     <?php foreach ($tutores as $tutor): ?>
                         <tr>
                             <td>
-                                <?= (int) $tutor["id"] ?>
+                                <?= (int) $tutor["id_tutor"] ?>
                             </td>
 
                             <td>
-                                <?= htmlspecialchars($tutor["nombre"] ?? "", ENT_QUOTES, "UTF-8") ?>
+                                <?= htmlspecialchars(
+                                    $tutor["nombre"] ?? "",
+                                    ENT_QUOTES,
+                                    "UTF-8"
+                                ) ?>
                             </td>
 
                             <td>
-                                <?= htmlspecialchars($tutor["correo"] ?? "", ENT_QUOTES, "UTF-8") ?>
+                                <?= htmlspecialchars(
+                                    $tutor["telefono"] ?? "",
+                                    ENT_QUOTES,
+                                    "UTF-8"
+                                ) ?>
                             </td>
 
                             <td>
-                                <?= htmlspecialchars($tutor["telefono"] ?? "", ENT_QUOTES, "UTF-8") ?>
-                            </td>
-
-                            <td>
-                                <?= htmlspecialchars($tutor["materia"] ?? "Sin materia", ENT_QUOTES, "UTF-8") ?>
+                                <?= htmlspecialchars(
+                                    $tutor["materia"] ?? "Sin materia",
+                                    ENT_QUOTES,
+                                    "UTF-8"
+                                ) ?>
                             </td>
 
                             <td>
@@ -308,39 +336,68 @@ require __DIR__ . "/../includes/header_admin.php";
                                 <div class="acciones-tutor">
 
                                     <a
-                                        href="tutor_form.php?id=<?= (int) $tutor["id"] ?>"
-                                        class="boton-tutor editar-tutor">
+                                        href="tutor_form.php?id=<?= (int) $tutor["id_tutor"] ?>"
+                                        class="boton-tutor editar-tutor"
+                                    >
                                         Editar
                                     </a>
 
                                     <form method="POST">
-                                        <input type="hidden" name="id"
-                                               value="<?= (int) $tutor["id"] ?>">
+                                        <input
+                                            type="hidden"
+                                            name="id"
+                                            value="<?= (int) $tutor["id_tutor"] ?>"
+                                        >
 
                                         <?php if ((int) $tutor["verificado"] === 1): ?>
-                                            <input type="hidden" name="accion" value="quitar">
+                                            <input
+                                                type="hidden"
+                                                name="accion"
+                                                value="quitar"
+                                            >
 
-                                            <button type="submit" class="boton-tutor quitar-tutor">
+                                            <button
+                                                type="submit"
+                                                class="boton-tutor quitar-tutor"
+                                            >
                                                 Quitar verificación
                                             </button>
                                         <?php else: ?>
-                                            <input type="hidden" name="accion" value="verificar">
+                                            <input
+                                                type="hidden"
+                                                name="accion"
+                                                value="verificar"
+                                            >
 
-                                            <button type="submit" class="boton-tutor verificar-tutor">
+                                            <button
+                                                type="submit"
+                                                class="boton-tutor verificar-tutor"
+                                            >
                                                 Verificar
                                             </button>
                                         <?php endif; ?>
                                     </form>
 
-                                    <form method="POST"
-                                          onsubmit="return confirm('¿Seguro que deseas eliminar este tutor?');">
+                                    <form
+                                        method="POST"
+                                        onsubmit="return confirm('¿Seguro que deseas eliminar este tutor? Se pueden eliminar también sus solicitudes relacionadas.');"
+                                    >
+                                        <input
+                                            type="hidden"
+                                            name="id"
+                                            value="<?= (int) $tutor["id_tutor"] ?>"
+                                        >
 
-                                        <input type="hidden" name="id"
-                                               value="<?= (int) $tutor["id"] ?>">
+                                        <input
+                                            type="hidden"
+                                            name="accion"
+                                            value="eliminar"
+                                        >
 
-                                        <input type="hidden" name="accion" value="eliminar">
-
-                                        <button type="submit" class="boton-tutor eliminar-tutor">
+                                        <button
+                                            type="submit"
+                                            class="boton-tutor eliminar-tutor"
+                                        >
                                             Eliminar
                                         </button>
                                     </form>
@@ -352,17 +409,17 @@ require __DIR__ . "/../includes/header_admin.php";
 
                 <?php else: ?>
                     <tr>
-                        <td colspan="7" class="sin-tutores">
+                        <td colspan="6" class="sin-tutores">
                             No hay tutores registrados todavía.
                         </td>
                     </tr>
                 <?php endif; ?>
             </tbody>
-
         </table>
+
     </div>
 
-    <p>
+    <p class="total-tutores">
         Total de tutores registrados:
         <strong><?= count($tutores) ?></strong>
     </p>
@@ -370,4 +427,3 @@ require __DIR__ . "/../includes/header_admin.php";
 </section>
 
 <?php require __DIR__ . "/../includes/footer.php"; ?>
-```
