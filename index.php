@@ -44,9 +44,9 @@ require __DIR__ . "/includes/header.php";
             </form>
 
             <!-- BOTÓN PARA INGRESAR AL LOGIN DEL ADMINISTRADOR -->
-            <div class="acceso-administrador">
+           <div class="acceso-administrador">
                 <a href="admin/login.php" class="boton-admin">
-                    Iniciar sesión como administrador
+                    ✦ Acceso de administrador
                 </a>
             </div>
 

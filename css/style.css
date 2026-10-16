@@ -508,12 +508,37 @@ body {
         margin: 0 0 0 16px;
     }
 }
+
+/* Botón de acceso al administrador */
+.acceso-administrador {
+    margin-top: 18px;
+    margin-bottom: 10px;
+}
+
 .boton-admin {
-    display: inline-block;
-    background-color: #6c4a9e;
-    color: white;
-    padding: 12px 25px;
-    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 20px;
+    background-color: #ffffff;
+    color: #6c4a9e;
+    border: 2px solid #6c4a9e;
+    border-radius: 12px;
     text-decoration: none;
-    font-weight: bold;
+    font-family: "Nunito", Arial, sans-serif;
+    font-size: 14px;
+    font-weight: 800;
+    transition: background-color 0.2s, color 0.2s, transform 0.2s;
+}
+
+.boton-admin:hover {
+    background-color: #6c4a9e;
+    color: #ffffff;
+    transform: translateY(-2px);
+}
+
+.boton-admin:focus-visible {
+    outline: 3px solid #b9ef9c;
+    outline-offset: 4px;
 }
