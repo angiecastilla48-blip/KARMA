@@ -1,4 +1,3 @@
-
 <?php
 session_start();
 
@@ -33,7 +32,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
             session_regenerate_id(true);
 
-            // Guardar los datos necesarios del administrador
             $_SESSION["admin"] = [
                 "id_admin" => $admin["id_admin"],
                 "nombre" => $admin["nombre"],

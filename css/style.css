@@ -508,21 +508,3 @@ body {
         margin: 0 0 0 16px;
     }
 }
-/* Botón de acceso al administrador */
-.acceso-administrador {
-    margin-top: 18px;
-}
-
-.boton-admin {
-    display: inline-block;
-    background-color: #6c4a9e;
-    color: white;
-    padding: 12px 25px;
-    border-radius: 10px;
-    text-decoration: none;
-    font-weight: bold;
-}
-
-.boton-admin:hover {
-    background-color: #6c4a9e;
-}
